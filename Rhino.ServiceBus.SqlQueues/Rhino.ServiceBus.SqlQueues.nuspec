@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Sql Queues implementation for Rhino ESB</description>
+    <copyright>Copyright Teleopti 2013</copyright>
+    <tags>Esb Sql Queue Service Bus Rhino</tags>
+  </metadata>
+</package>
