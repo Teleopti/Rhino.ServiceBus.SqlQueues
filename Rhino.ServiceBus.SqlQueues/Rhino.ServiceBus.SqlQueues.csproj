@@ -62,6 +62,7 @@
     <Compile Include="ErrorAction.cs" />
     <Compile Include="GenericSubscriptionStorage.cs" />
     <Compile Include="GetItemsRequest.cs" />
+    <Compile Include="Hosting\SqlRemoteAppDomainHost.cs" />
     <Compile Include="IQueue.cs" />
     <Compile Include="ISqlQueue.cs" />
     <Compile Include="IStorage.cs" />

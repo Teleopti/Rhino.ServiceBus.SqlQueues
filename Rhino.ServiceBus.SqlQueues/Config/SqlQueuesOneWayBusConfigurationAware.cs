@@ -37,7 +37,7 @@ namespace Rhino.ServiceBus.SqlQueues.Config
 			b.RegisterSingleton<IOnewayBus>(() => new SqlQueuesOneWayBus(
 				oneWayConfig.MessageOwners,
 				l.Resolve<IMessageSerializer>(),
-				busConfig.Path,
+				busConfig.Path ?? QueueConnectionStringContainer.ConnectionString,
 				l.Resolve<IMessageBuilder<MessagePayload>>()));
 		}
 	}

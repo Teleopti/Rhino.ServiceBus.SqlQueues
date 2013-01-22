@@ -1,10 +1,17 @@
 using System;
+using System.Reflection;
 using Rhino.ServiceBus.Config;
+using Rhino.ServiceBus.Hosting;
 using Rhino.ServiceBus.Impl;
 using Rhino.ServiceBus.Internal;
 
 namespace Rhino.ServiceBus.SqlQueues.Config
 {
+	public static class QueueConnectionStringContainer
+	{
+		public static string ConnectionString { get; set; }
+	}
+	
 	public class SqlQueuesConfigurationAware : IBusConfigurationAware
 	{
 		public void Configure(AbstractRhinoServiceBusConfiguration config, IBusContainerBuilder builder, IServiceLocator locator)
@@ -23,7 +30,7 @@ namespace Rhino.ServiceBus.SqlQueues.Config
 		{
 			var busConfig = c.ConfigurationSection.Bus;
 
-			b.RegisterSingleton<IStorage>(()=> new SqlStorage(busConfig.Path));
+			b.RegisterSingleton<IStorage>(() => new SqlStorage(busConfig.Path ?? QueueConnectionStringContainer.ConnectionString));
 
 			b.RegisterSingleton<ISubscriptionStorage>(() => new GenericSubscriptionStorage(
 			                                                	l.Resolve<IStorage>(),
@@ -36,7 +43,7 @@ namespace Rhino.ServiceBus.SqlQueues.Config
 			                                      	l.Resolve<IEndpointRouter>(),
 			                                      	l.Resolve<IMessageSerializer>(),
 			                                      	c.ThreadCount,
-			                                      	busConfig.Path,
+													busConfig.Path ?? QueueConnectionStringContainer.ConnectionString,
 			                                      	c.NumberOfRetries,
 			                                      	l.Resolve<IMessageBuilder<MessagePayload>>()));
 
