@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using Rhino.ServiceBus.Internal;
@@ -38,8 +39,7 @@ namespace Rhino.ServiceBus.SqlQueues
             var payload=new MessagePayload
             {
                 Data = data,
-                Headers =
-                        {
+                Headers = new NameValueCollection{
                             {"id", messageId.ToString()},
                             {"type", GetAppSpecificMarker(messageInformation.Messages).ToString()},
                             {"source", endpoint.Uri.ToString()},
@@ -52,6 +52,7 @@ namespace Rhino.ServiceBus.SqlQueues
                 customizeHeader.Customize(messageInformation);
             }
 
+        	payload.SentAt = DateTime.UtcNow;
             payload.DeliverBy = messageInformation.DeliverBy;
             payload.MaxAttempts = messageInformation.MaxAttempts;
 
