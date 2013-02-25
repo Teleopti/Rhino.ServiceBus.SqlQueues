@@ -91,7 +91,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT @QueueId = QueueId FROM Queue.Queues WHERE QueueName = @Queue AND Endpoint = @Endpoint;
+	SELECT @QueueId = QueueId FROM Queue.Queues WHERE QueueName = @Queue AND Endpoint = @Endpoint AND ParentQueueId IS NULL;
 	if (@QueueId is null)
 		BEGIN
 			INSERT INTO Queue.Queues (QueueName,Endpoint) VALUES (@Queue,@Endpoint)
@@ -172,7 +172,8 @@ BEGIN
     EXEC Queue.GetAndAddQueue @Endpoint,@Queue,@Subqueue,@QueueId=@QueueId OUTPUT;
 
 	UPDATE Queue.Messages
-	SET QueueId = @QueueId
+	SET QueueId = @QueueId,
+	ProcessingUntil = GetDate()
 	WHERE MessageId=@MessageId
 END
 GO
