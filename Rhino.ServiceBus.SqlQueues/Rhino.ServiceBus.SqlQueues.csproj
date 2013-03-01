@@ -39,12 +39,13 @@
     <AssemblyOriginatorKeyFile>Rhino.ServiceBus.SqlQueues.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Common.Logging, Version=2.1.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+    <Reference Include="Common.Logging, Version=2.1.2.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>packages\Common.Logging.2.1.1\lib\net35\Common.Logging.dll</HintPath>
+      <HintPath>packages\Common.Logging.2.1.2\lib\net40\Common.Logging.dll</HintPath>
     </Reference>
-    <Reference Include="Rhino.ServiceBus">
-      <HintPath>packages\Rhino.ServiceBus.3.0.0.0\lib\4.0\Rhino.ServiceBus.dll</HintPath>
+    <Reference Include="Rhino.ServiceBus, Version=3.0.2.0, Culture=neutral, PublicKeyToken=0b3305902db7183f, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>packages\Rhino.ServiceBus.3.0.2\lib\4.0\Rhino.ServiceBus.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -82,7 +83,9 @@
     <Compile Include="TimeoutAction.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config.transform" />
+    <None Include="App.config.transform">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
     <None Include="Rhino.ServiceBus.SqlQueues.snk" />
   </ItemGroup>

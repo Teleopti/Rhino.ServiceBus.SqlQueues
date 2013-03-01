@@ -130,23 +130,26 @@ namespace Rhino.ServiceBus.SqlQueues
                 var headersIndex = reader.GetOrdinal("Headers");
                 var payloadIndex = reader.GetOrdinal("Payload");
                 var subQueueNameIndex = reader.GetOrdinal("SubqueueName");
-                while (reader.Read())
-                {
-                    raw = new RawMessage
-                              {
-                                  CreatedAt = reader.GetDateTime(createdAtIndex),
-                                  Headers = reader.GetString(headersIndex),
-                                  MessageId = reader.GetInt32(messageIdIndex),
-                                  Processed = reader.GetBoolean(processedIndex),
-                                  ProcessingUntil = reader.GetDateTime(processingUntilIndex),
-                                  QueueId = reader.GetInt32(queueIdIndex)
-                              };
+
+				if (reader.HasRows)
+				{
+					reader.Read();
+
+					raw = new RawMessage
+					{
+						CreatedAt = reader.GetDateTime(createdAtIndex),
+						Headers = reader.GetString(headersIndex),
+						MessageId = reader.GetInt32(messageIdIndex),
+						Processed = reader.GetBoolean(processedIndex),
+						ProcessingUntil = reader.GetDateTime(processingUntilIndex),
+						QueueId = reader.GetInt32(queueIdIndex)
+					};
 
 					if (!reader.IsDBNull(subQueueNameIndex))
-                		raw.SubQueueName = reader.GetString(subQueueNameIndex);
+						raw.SubQueueName = reader.GetString(subQueueNameIndex);
 					if (!reader.IsDBNull(payloadIndex))
-                    raw.Payload = reader.GetSqlBinary(payloadIndex).Value;
-                }
+						raw.Payload = reader.GetSqlBinary(payloadIndex).Value;
+				}
 				reader.Close();
             }
             return raw == null ? null : raw.ToMessage();
