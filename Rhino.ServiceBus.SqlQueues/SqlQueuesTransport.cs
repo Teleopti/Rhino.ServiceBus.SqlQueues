@@ -229,7 +229,7 @@ namespace Rhino.ServiceBus.SqlQueues
                         Queue.MoveTo(SubQueue.Errors.ToString(), message);
                         Queue.EnqueueDirectlyTo(SubQueue.Errors.ToString(), new MessagePayload
                                                                                 {
-                                                                                    SentAt = DateTime.Now,
+                                                                                    SentAt = DateTime.UtcNow,
                                                                                     Data = null,
                                                                                     Headers = new NameValueCollection
                                                                                                   {
