@@ -28,7 +28,7 @@ namespace Rhino.ServiceBus.SqlQueues
         private bool haveStarted;
         private readonly int numberOfRetries;
         private readonly IMessageBuilder<MessagePayload> messageBuilder;
-        private const int SleepMax = 5000;
+        private const int SleepMax = 15000;
 
         [ThreadStatic]
         private static SqlQueueCurrentMessageInformation currentMessageInformation;
