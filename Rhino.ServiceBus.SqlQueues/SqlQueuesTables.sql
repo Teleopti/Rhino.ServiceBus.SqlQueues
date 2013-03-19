@@ -14,6 +14,10 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Queue].[Sub
 DROP TABLE [Queue].[SubscriptionStorage]
 GO
 
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Queue].[MessagesPurged]') AND type in (N'U'))
+DROP TABLE [Queue].[MessagesPurged]
+GO
+
 CREATE TABLE [Queue].[Messages](
 	[MessageId] [bigint] IDENTITY(1,1) NOT NULL,
 	[QueueId] [int] NOT NULL,
@@ -69,10 +73,31 @@ CREATE TABLE [Queue].[SubscriptionStorage](
 
 GO
 
-ALTER TABLE [Queue].[Messages] ADD  CONSTRAINT [DF_Messages_CreatedAt]  DEFAULT (getdate()) FOR [CreatedAt]
-ALTER TABLE [Queue].[Messages] ADD  CONSTRAINT [DF_Messages_ProcessingUntil]  DEFAULT (getdate()) FOR [ProcessingUntil]
+ALTER TABLE [Queue].[Messages] ADD  CONSTRAINT [DF_Messages_CreatedAt]  DEFAULT (getutcdate()) FOR [CreatedAt]
+ALTER TABLE [Queue].[Messages] ADD  CONSTRAINT [DF_Messages_ProcessingUntil]  DEFAULT (getutcdate()) FOR [ProcessingUntil]
 ALTER TABLE [Queue].[Messages] ADD  CONSTRAINT [DF_Messages_Processed]  DEFAULT ((0)) FOR [Processed]
 ALTER TABLE [Queue].[Messages] ADD  CONSTRAINT [DF_Messages_ProcessedCount]  DEFAULT ((1)) FOR [ProcessedCount]
 GO
 
 ALTER TABLE [Queue].[Queues] ADD  CONSTRAINT [DF_Queues_Endpoint]  DEFAULT ('') FOR [Endpoint]
+
+CREATE TABLE [Queue].[MessagesPurged](
+	[Id] [bigint] IDENTITY(-9223372036854775808,1) NOT NULL,
+	[PurgedAt] [datetime] NOT NULL,
+	[MessageId] [bigint] NOT NULL,
+	[QueueId] [int] NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[ProcessingUntil] [datetime] NOT NULL,
+	[ExpiresAt] [datetime] NULL,
+	[Processed] [bit] NOT NULL,
+	[Headers] [nvarchar](2000) NULL,
+	[Payload] [varbinary](max) NULL,
+	[ProcessedCount] [int] NOT NULL,
+ CONSTRAINT [PK_MessagesPurged] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)
+)
+
+ALTER TABLE [Queue].[MessagesPurged] ADD  CONSTRAINT [DF_PurgedAt_CreatedAt]  DEFAULT (getutcdate()) FOR [PurgedAt]
+GO
