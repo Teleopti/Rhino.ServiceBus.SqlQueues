@@ -189,7 +189,7 @@ BEGIN
 	
 	SELECT TOP 1 1 as 'y'
 	FROM Queue.Messages
-	WHERE isnull(ExpiresAt,DATEADD(mi,1,GetUtcDate())) > GetUtcDate()
+	WHERE (ExpiresAt IS NULL OR ExpiresAt < GetUtcDate())
 	AND Processed=0
 	AND ProcessingUntil<GetUtcDate()
 	AND QueueId = @QueueId
@@ -239,7 +239,7 @@ BEGIN
 	DECLARE @MessageId bigint;
 	SELECT TOP 1 @MessageId = MessageId
 	FROM Queue.Messages
-	WHERE isnull(ExpiresAt,DATEADD(mi,1,GetUtcDate())) > GetUtcDate()
+	WHERE (ExpiresAt IS NULL OR ExpiresAt < GetUtcDate())
 	AND Processed=0
 	AND ProcessingUntil<GetUtcDate()
 	AND QueueId=@QueueId
