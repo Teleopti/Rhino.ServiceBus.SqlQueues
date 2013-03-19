@@ -35,10 +35,11 @@ namespace Rhino.ServiceBus.SqlQueues
 
         private readonly ILog logger = LogManager.GetLogger(typeof(SqlQueuesTransport));
         private TimeoutAction timeout;
+        private CleanAction cleanUp;
         private ISqlQueue queue;
-    	private int _queueId;
+        private int _queueId;
 
-    	public SqlQueuesTransport(Uri queueEndpoint,
+        public SqlQueuesTransport(Uri queueEndpoint,
             IEndpointRouter endpointRouter,
             IMessageSerializer messageSerializer,
             int threadCount,
@@ -71,6 +72,9 @@ namespace Rhino.ServiceBus.SqlQueues
 
             if (timeout != null)
                 timeout.Dispose();
+
+            if (cleanUp != null)
+                cleanUp.Dispose();
             DisposeQueueManager();
 
             if (!haveStarted)
@@ -130,6 +134,7 @@ namespace Rhino.ServiceBus.SqlQueues
             queue = _sqlQueueManager.GetQueue(queueName);
 
             timeout = new TimeoutAction(queue);
+            cleanUp = new CleanAction(queue);
             logger.DebugFormat("Starting {0} threads to handle messages on {1}, number of retries: {2}",
                 threadCount, queueEndpoint, numberOfRetries);
             for (var i = 0; i < threadCount; i++)
@@ -173,11 +178,11 @@ namespace Rhino.ServiceBus.SqlQueues
                                        queueEndpoint);
                     continue;
                 }
-					catch(SqlException e)
-				{
-					logger.Debug("Could not get message from database.", e);
-					continue;
-				}
+                catch (SqlException e)
+                {
+                    logger.Warn("Could not get message from database.", e);
+                    continue;
+                }
                 catch (ObjectDisposedException)
                 {
                     logger.DebugFormat("Shutting down the transport for {0} thread {1}", queueEndpoint, context);
@@ -207,13 +212,13 @@ namespace Rhino.ServiceBus.SqlQueues
                     logger.DebugFormat("Could not find a message on {0} during the timeout period",
                                        queueEndpoint);
                     continue;
-				}
-				catch (SqlException e)
-				{
-					logger.Debug("Could not get message from database.",
-									   e);
-					continue;
-				}
+                }
+                catch (SqlException e)
+                {
+                    logger.Debug("Could not get message from database.",
+                                       e);
+                    continue;
+                }
                 catch (Exception e)
                 {
                     logger.Error(
@@ -228,10 +233,10 @@ namespace Rhino.ServiceBus.SqlQueues
                     {
                         Queue.MoveTo(SubQueue.Errors.ToString(), message);
                         Queue.EnqueueDirectlyTo(SubQueue.Errors.ToString(), new MessagePayload
-                                                                                {
-                                                                                    SentAt = DateTime.UtcNow,
-                                                                                    Data = null,
-                                                                                    Headers = new NameValueCollection
+                        {
+                            SentAt = DateTime.UtcNow,
+                            Data = null,
+                            Headers = new NameValueCollection
                                                                                                   {
                                                                                                       {
                                                                                                           "correlation-id", message.Id.ToString()
@@ -240,20 +245,20 @@ namespace Rhino.ServiceBus.SqlQueues
                                                                                                           "retries", message.ProcessedCount.ToString(CultureInfo.InvariantCulture)
                                                                                                       }
                                                                                                   }
-                                                                                });
+                        });
                         tx.Transaction.Commit();
                     }
                     continue;
                 }
 
-                var messageWithTimer = new MessageWithTimer {Message = message};
+                var messageWithTimer = new MessageWithTimer { Message = message };
                 var messageProcessingTimer = new Timer(extendMessageLeaaseIfMessageStillInProgress, messageWithTimer,
                                                        TimeSpan.FromSeconds(40), TimeSpan.FromMilliseconds(-1));
                 messageWithTimer.Timer = messageProcessingTimer;
-                
+
                 try
                 {
-                    var msgType = (MessageType) Enum.Parse(typeof (MessageType), message.Headers["type"]);
+                    var msgType = (MessageType)Enum.Parse(typeof(MessageType), message.Headers["type"]);
                     logger.DebugFormat("Starting to handle message {0} of type {1} on {2}",
                                        message.Id,
                                        msgType,
@@ -269,7 +274,7 @@ namespace Rhino.ServiceBus.SqlQueues
                             break;
                         case MessageType.ShutDownMessageMarker:
                             //ignoring this one
-                            using(var tx = _sqlQueueManager.BeginTransaction())
+                            using (var tx = _sqlQueueManager.BeginTransaction())
                             {
                                 _sqlQueueManager.MarkMessageAsReady(message);
                                 tx.Transaction.Commit();
@@ -448,33 +453,33 @@ namespace Rhino.ServiceBus.SqlQueues
             SendInternal(msgs, destination, nv => { });
         }
 
-		private void SendInternal(object[] msgs, Endpoint destination, Action<NameValueCollection> customizeHeaders)
-		{
-			var messageId = Guid.NewGuid();
-			var messageInformation = new OutgoingMessageInformation
-			{
-				Destination = destination,
-				Messages = msgs,
-				Source = Endpoint
-			};
-			var payload = messageBuilder.BuildFromMessageBatch(messageInformation);
-			logger.DebugFormat("Sending a message with id '{0}' to '{1}'", messageId, destination.Uri);
-			customizeHeaders(payload.Headers);
+        private void SendInternal(object[] msgs, Endpoint destination, Action<NameValueCollection> customizeHeaders)
+        {
+            var messageId = Guid.NewGuid();
+            var messageInformation = new OutgoingMessageInformation
+            {
+                Destination = destination,
+                Messages = msgs,
+                Source = Endpoint
+            };
+            var payload = messageBuilder.BuildFromMessageBatch(messageInformation);
+            logger.DebugFormat("Sending a message with id '{0}' to '{1}'", messageId, destination.Uri);
+            customizeHeaders(payload.Headers);
 
-			_sqlQueueManager.Send(destination.Uri, payload);
+            _sqlQueueManager.Send(destination.Uri, payload);
 
-			var copy = MessageSent;
-			if (copy == null)
-				return;
+            var copy = MessageSent;
+            if (copy == null)
+                return;
 
-			copy(new SqlQueueCurrentMessageInformation
-			{
-				AllMessages = msgs,
-				Source = Endpoint.Uri,
-				Destination = destination.Uri,
-				MessageId = messageId,
-			});
-		}
+            copy(new SqlQueueCurrentMessageInformation
+            {
+                AllMessages = msgs,
+                Source = Endpoint.Uri,
+                Destination = destination.Uri,
+                MessageId = messageId,
+            });
+        }
 
         public void Send(Endpoint endpoint, DateTime processAgainAt, object[] msgs)
         {

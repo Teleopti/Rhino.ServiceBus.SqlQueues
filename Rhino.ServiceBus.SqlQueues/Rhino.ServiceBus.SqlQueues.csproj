@@ -58,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddItemRequest.cs" />
+    <Compile Include="CleanAction.cs" />
     <Compile Include="Config\SqlQueuesOneWayBusConfigurationAware.cs" />
     <Compile Include="Config\SqlQueuesConfigurationAware.cs" />
     <Compile Include="ErrorAction.cs" />
