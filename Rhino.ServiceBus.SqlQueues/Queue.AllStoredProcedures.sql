@@ -303,8 +303,6 @@ GO
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Queue].[Clean]') AND type in (N'P', N'PC'))
 DROP PROCEDURE [Queue].[Clean]
 GO
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Queue].[Clean]') AND type in (N'P', N'PC'))
-BEGIN
 CREATE PROCEDURE [Queue].[Clean]
 	@Endpoint nvarchar(250),
 	@Queue nvarchar(50)
