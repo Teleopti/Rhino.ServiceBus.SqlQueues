@@ -52,7 +52,7 @@ DROP TABLE [Queue].[SubscriptionStorage]
 GO
 
 CREATE TABLE [Queue].[Messages](
-	[MessageId] [int] IDENTITY(1,1) NOT NULL,
+	[MessageId] [bigint] IDENTITY(1,1) NOT NULL,
 	[QueueId] [int] NOT NULL,
 	[CreatedAt] [datetime] NOT NULL,
 	[ProcessingUntil] [datetime] NOT NULL,

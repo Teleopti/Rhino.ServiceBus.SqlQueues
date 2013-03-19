@@ -5,7 +5,7 @@ namespace Rhino.ServiceBus.SqlQueues
 {
     public class RawMessage
     {
-        public int MessageId { get; set; }
+        public long MessageId { get; set; }
         public int QueueId { get; set; }
         public string SubQueueName { get; set; }
         public DateTime CreatedAt { get; set; }

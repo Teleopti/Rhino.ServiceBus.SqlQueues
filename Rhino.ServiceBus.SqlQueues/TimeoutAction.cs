@@ -13,8 +13,8 @@ namespace Rhino.ServiceBus.SqlQueues
         private readonly ISqlQueue queue;
         private readonly ILog logger = LogManager.GetLogger(typeof (TimeoutAction));
         private readonly Timer timeoutTimer;
-        private readonly OrderedList<DateTime, int> timeoutMessageIds =
-            new OrderedList<DateTime, int>();
+        private readonly OrderedList<DateTime, long> timeoutMessageIds =
+            new OrderedList<DateTime, long>();
 
         [CLSCompliant(false)]
         public TimeoutAction(ISqlQueue queue)
@@ -57,7 +57,7 @@ namespace Rhino.ServiceBus.SqlQueues
 
             timeoutMessageIds.Write(writer =>
             {
-                KeyValuePair<DateTime, List<int>> pair;
+                KeyValuePair<DateTime, List<long>> pair;
                 while (writer.TryRemoveFirstUntil(CurrentTime, out pair))
                 {
                     if (pair.Key > CurrentTime)

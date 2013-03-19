@@ -90,7 +90,7 @@ namespace Rhino.ServiceBus.SqlQueues
                         {
                             CreatedAt = reader.GetDateTime(createdAtIndex),
                             Headers = reader.GetString(headersIndex),
-                            MessageId = reader.GetInt32(messageIdIndex),
+                            MessageId = reader.GetInt64(messageIdIndex),
                             Processed = reader.GetBoolean(processedIndex),
                             ProcessingUntil = reader.GetDateTime(processingUntilIndex),
                             QueueId = reader.GetInt32(queueIdIndex),
@@ -128,7 +128,7 @@ namespace Rhino.ServiceBus.SqlQueues
             }
         }
 
-        public Message PeekById(int messageId)
+        public Message PeekById(long messageId)
         {
             RawMessage raw = null;
 
@@ -157,7 +157,7 @@ namespace Rhino.ServiceBus.SqlQueues
                     {
                         CreatedAt = reader.GetDateTime(createdAtIndex),
                         Headers = reader.GetString(headersIndex),
-                        MessageId = reader.GetInt32(messageIdIndex),
+                        MessageId = reader.GetInt64(messageIdIndex),
                         Processed = reader.GetBoolean(processedIndex),
                         ProcessingUntil = reader.GetDateTime(processingUntilIndex),
                         QueueId = reader.GetInt32(queueIdIndex)

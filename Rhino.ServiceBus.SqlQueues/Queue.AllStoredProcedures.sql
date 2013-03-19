@@ -68,7 +68,7 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Queue].[Ext
 DROP PROCEDURE [Queue].[ExtendMessageLease]
 GO
 CREATE PROCEDURE [Queue].[ExtendMessageLease]
-	@MessageId int
+	@MessageId bigint
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -139,7 +139,7 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Queue].[Mar
 DROP PROCEDURE [Queue].[MarkMessageAsReady]
 GO
 CREATE PROCEDURE [Queue].[MarkMessageAsReady]
-	@MessageId int
+	@MessageId bigint
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -162,7 +162,7 @@ CREATE PROCEDURE [Queue].[MoveMessage]
 	@Endpoint nvarchar(250),
 	@Queue nvarchar(50),
 	@Subqueue nvarchar(50),
-	@MessageId int
+	@MessageId bigint
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -187,7 +187,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	SELECT TOP 1 *
+	SELECT TOP 1 1 as 'y'
 	FROM Queue.Messages
 	WHERE isnull(ExpiresAt,DATEADD(mi,1,GetUtcDate())) > GetUtcDate()
 	AND Processed=0
@@ -201,23 +201,29 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Queue].[Pee
 DROP PROCEDURE [Queue].[PeekMessageById]
 GO
 CREATE PROCEDURE [Queue].[PeekMessageById]
-	@MessageId int
+	@MessageId bigint
 AS
 BEGIN
 	SET NOCOUNT ON;
 
     SELECT
-		m.*,
+		m.MessageId,
+		m.QueueId,
+		m.CreatedAt,
+		m.ProcessingUntil,
+		m.Processed,
+		m.Headers,
+		m.Payload,
 		q.QueueName SubQueueName
     FROM Queue.Messages m
     LEFT JOIN Queue.Queues q
 		ON m.QueueId=q.QueueId
 		AND q.ParentQueueId IS NOT NULL
-	WHERE isnull(m.ExpiresAt,DATEADD(mi,1,GetUtcDate())) > GetUtcDate()
+	WHERE m.MessageId = @MessageId
+	AND isnull(m.ExpiresAt,DATEADD(mi,1,GetUtcDate())) > GetUtcDate()
 	AND m.Processed=0
 	AND m.ProcessingUntil<GetUtcDate()
-	AND m.MessageId=@MessageId
-	ORDER BY CreatedAt ASC
+	ORDER BY m.CreatedAt ASC
 END
 GO
 ----
@@ -230,7 +236,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @MessageId int;
+	DECLARE @MessageId bigint;
 	SELECT TOP 1 @MessageId = MessageId
 	FROM Queue.Messages
 	WHERE isnull(ExpiresAt,DATEADD(mi,1,GetUtcDate())) > GetUtcDate()
@@ -246,13 +252,27 @@ BEGIN
 			ProcessedCount=ProcessedCount+1
 			WHERE MessageId=@MessageId
 			
-			SELECT *
+			SELECT
+				MessageId,
+				CreatedAt,
+				ProcessingUntil,
+				ProcessedCount,
+				Processed,
+				Headers,
+				Payload
 			FROM Queue.Messages
 			WHERE MessageId=@MessageId
 		END
 	else
 		BEGIN
-			SELECT TOP 0 *
+			SELECT TOP 0
+				MessageId,
+				CreatedAt,
+				ProcessingUntil,
+				ProcessedCount,
+				Processed,
+				Headers,
+				Payload
 			FROM Queue.Messages;
 		END
 END
@@ -277,8 +297,15 @@ BEGIN
 			SET ProcessingUntil = DateAdd(mi,10,GetUtcDate()),
 			ProcessedCount=ProcessedCount+1
 			WHERE QueueId = @QueueId
-			
-			SELECT *
+
+			SELECT
+				MessageId,
+				QueueId,
+				CreatedAt,
+				ProcessingUntil,
+				Processed,
+				Headers,
+				Payload
 			FROM Queue.Messages
 			WHERE QueueId = @QueueId
 END
@@ -317,3 +344,4 @@ BEGIN
 			DELETE FROM Queue.Messages WHERE QueueId=@QueueId AND ExpiresAt<GetUtcDate()
 END
 GO
+----
