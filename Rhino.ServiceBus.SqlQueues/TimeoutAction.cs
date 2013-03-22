@@ -13,8 +13,8 @@ namespace Rhino.ServiceBus.SqlQueues
         private readonly ISqlQueue queue;
         private readonly ILog logger = LogManager.GetLogger(typeof (TimeoutAction));
         private readonly Timer timeoutTimer;
-        private readonly OrderedList<DateTime, int> timeoutMessageIds =
-            new OrderedList<DateTime, int>();
+        private readonly OrderedList<DateTime, IList<int>> timeoutMessageIds =
+			new OrderedList<DateTime, IList<int>>();
 
         [CLSCompliant(false)]
         public TimeoutAction(ISqlQueue queue)
@@ -32,14 +32,14 @@ namespace Rhino.ServiceBus.SqlQueues
         	                        				                                       XmlDateTimeSerializationMode.Unspecified);
         	                        				logger.DebugFormat("Registering message {0} to be sent at {1} on {2}",
         	                        				                   message.Id, timeToSend, queue.QueueName);
-        	                        				writer.Add(timeToSend, message.Id);
+        	                        				writer.WriteMessageId(timeToSend, message);
         	                        			}
         	                        		}
         	                        	});
             timeoutTimer = new Timer(OnTimeoutCallback, null, TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(1));
         }
 
-        public static DateTime CurrentTime
+	    public static DateTime CurrentTime
         {
             get { return DateTime.Now; }
         }
@@ -57,28 +57,31 @@ namespace Rhino.ServiceBus.SqlQueues
 
             timeoutMessageIds.Write(writer =>
             {
-                KeyValuePair<DateTime, List<int>> pair;
+                KeyValuePair<DateTime, List<IList<int>>> pair;
                 while (writer.TryRemoveFirstUntil(CurrentTime, out pair))
                 {
                     if (pair.Key > CurrentTime)
                         return;
 
-                    foreach (var messageId in pair.Value)
+                    foreach (var messageIdCollection in pair.Value)
                     {
                         try
                         {
                             logger.DebugFormat("Moving message {0} to main queue: {1}",
-                                               messageId, queue.QueueName);
+                                               messageIdCollection, queue.QueueName);
                             using (var tx = queue.BeginTransaction())
                             {
-                                var message = queue.PeekById(messageId);
-                                if (message == null)
-                                {
-									logger.DebugFormat("Failed to move message {0} to main queue: {1}, not found.",
-											   messageId, queue.QueueName);
-                                	return;
-                                }
-                                queue.MoveTo(null, message);
+	                            foreach (var id in messageIdCollection)
+	                            {
+									var message = queue.PeekById(id);
+									if (message == null)
+									{
+										logger.DebugFormat("Failed to move message {0} to main queue: {1}, not found.",
+												   id, queue.QueueName);
+										continue;
+									}
+									queue.MoveTo(null, message);
+	                            }
                                 tx.Transaction.Commit();
                             }
                         }
@@ -96,7 +99,7 @@ namespace Rhino.ServiceBus.SqlQueues
                                 continue;
                             }
 
-                            writer.Add(pair.Key, messageId);
+                            writer.Add(pair.Key, messageIdCollection);
                             logger.DebugFormat("Will retry moving message {0} to main queue {1} in 1 second",
                                                pair.Value,
                                                queue.QueueName);
@@ -122,8 +125,24 @@ namespace Rhino.ServiceBus.SqlQueues
                 logger.DebugFormat("Registering message {0} to be sent at {1} on {2}",
                                    message.Id, timeToSend, queue.QueueName);
 
-                writer.Add(timeToSend, message.Id);    
+                writer.WriteMessageId(timeToSend, message);
             });
         }
     }
+
+	public static class OrderedListExtensions
+	{
+		public static void WriteMessageId(this OrderedList<DateTime, IList<int>>.Writer writer, DateTime timeToSend, Message message)
+		{
+			List<IList<int>> list;
+			if (writer.TryGetValue(timeToSend, out list) && list.Count > 0)
+			{
+				list[0].Add(message.Id);
+			}
+			else
+			{
+				writer.Add(timeToSend, new List<int> { message.Id });
+			}
+		}
+	}
 }
