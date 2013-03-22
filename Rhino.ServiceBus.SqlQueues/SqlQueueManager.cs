@@ -99,7 +99,7 @@ namespace Rhino.ServiceBus.SqlQueues
                               {
                                   CreatedAt = reader.GetDateTime(createdAtIndex),
                                   Headers = reader.GetString(headersIndex),
-                                  MessageId = reader.GetInt32(messageIdIndex),
+                                  MessageId = reader.GetInt64(messageIdIndex),
                                   Processed = reader.GetBoolean(processedIndex),
                                   ProcessingUntil = reader.GetDateTime(processingUntilIndex),
                                   ProcessedCount = reader.GetInt32(processedCountIndex),

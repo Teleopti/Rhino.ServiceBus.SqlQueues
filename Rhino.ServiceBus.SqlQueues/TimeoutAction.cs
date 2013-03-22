@@ -13,8 +13,8 @@ namespace Rhino.ServiceBus.SqlQueues
         private readonly ISqlQueue queue;
         private readonly ILog logger = LogManager.GetLogger(typeof (TimeoutAction));
         private readonly Timer timeoutTimer;
-        private readonly OrderedList<DateTime, IList<int>> timeoutMessageIds =
-			new OrderedList<DateTime, IList<int>>();
+        private readonly OrderedList<DateTime, IList<long>> timeoutMessageIds =
+			new OrderedList<DateTime, IList<long>>();
 
         [CLSCompliant(false)]
         public TimeoutAction(ISqlQueue queue)
@@ -57,7 +57,7 @@ namespace Rhino.ServiceBus.SqlQueues
 
             timeoutMessageIds.Write(writer =>
             {
-                KeyValuePair<DateTime, List<IList<int>>> pair;
+                KeyValuePair<DateTime, List<IList<long>>> pair;
                 while (writer.TryRemoveFirstUntil(CurrentTime, out pair))
                 {
                     if (pair.Key > CurrentTime)
@@ -132,16 +132,16 @@ namespace Rhino.ServiceBus.SqlQueues
 
 	public static class OrderedListExtensions
 	{
-		public static void WriteMessageId(this OrderedList<DateTime, IList<int>>.Writer writer, DateTime timeToSend, Message message)
+		public static void WriteMessageId(this OrderedList<DateTime, IList<long>>.Writer writer, DateTime timeToSend, Message message)
 		{
-			List<IList<int>> list;
+			List<IList<long>> list;
 			if (writer.TryGetValue(timeToSend, out list) && list.Count > 0)
 			{
 				list[0].Add(message.Id);
 			}
 			else
 			{
-				writer.Add(timeToSend, new List<int> { message.Id });
+				writer.Add(timeToSend, new List<long> { message.Id });
 			}
 		}
 	}
