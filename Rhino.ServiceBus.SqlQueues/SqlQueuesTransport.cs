@@ -174,7 +174,7 @@ namespace Rhino.ServiceBus.SqlQueues
                 }
                 catch (TimeoutException)
                 {
-                    logger.DebugFormat("Could not find a message on {0} during the timeout period",
+                    logger.DebugFormat("Could not find a message on {0} during the timeout period.",
                                        queueEndpoint);
                     continue;
                 }
@@ -185,15 +185,18 @@ namespace Rhino.ServiceBus.SqlQueues
                 }
                 catch (ObjectDisposedException)
                 {
-                    logger.DebugFormat("Shutting down the transport for {0} thread {1}", queueEndpoint, context);
+                    logger.DebugFormat("Shutting down the transport for {0} thread {1}.", queueEndpoint, context);
                     return;
-                }
-                catch (InvalidOperationException e)
-                {
-                    logger.Error(
-                        "An error occured while recieving a message, shutting down message processing thread", e);
-                    return;
-                }
+				}
+				catch (InvalidOperationException e)
+				{
+					logger.Error(
+						"An error occured while recieving a message, clearing connection pool and make a new attempt after some sleep.", e);
+
+					SqlConnection.ClearAllPools();
+					sleepTime = SleepMax;
+					continue;
+				}
 
                 if (shouldContinue == false)
                     return;
