@@ -197,6 +197,13 @@ namespace Rhino.ServiceBus.SqlQueues
 					sleepTime = SleepMax;
 					continue;
 				}
+				catch (Exception e)
+				{
+					logger.Error(
+						"An error occured while recieving a message, shutting down message processing thread",
+						e);
+					return;
+				}
 
                 if (shouldContinue == false)
                     return;
@@ -221,7 +228,16 @@ namespace Rhino.ServiceBus.SqlQueues
                     logger.Debug("Could not get message from database.",
                                        e);
                     continue;
-                }
+				}
+				catch (InvalidOperationException e)
+				{
+					logger.Error(
+						"An error occured while recieving a message, clearing connection pool and make a new attempt after some sleep.", e);
+
+					SqlConnection.ClearAllPools();
+					sleepTime = SleepMax;
+					continue;
+				}
                 catch (Exception e)
                 {
                     logger.Error(
