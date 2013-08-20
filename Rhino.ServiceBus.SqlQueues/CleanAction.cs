@@ -21,27 +21,36 @@ namespace Rhino.ServiceBus.SqlQueues
 
         private void OnTimeoutCallback(object state)
         {
-	        try
-	        {
+			try
+			{
 				queue.Clean();
-		        failCount = 0;
-	        }
-	        catch (SqlException exception)
-	        {
-		        failCount++;
-
-				if (failCount > 3)
-				{
-					logger.Error("Failed to perform the clean action for three times or more.",exception);
-				}
-				else
-				{
-					logger.Warn("Failed to perform the clean action, verify that this doesn't happen regularly.", exception);
-				}
-	        }
+				failCount = 0;
+			}
+			catch (InvalidOperationException exception)
+			{
+				HandleException(exception);
+			}
+			catch (SqlException exception)
+			{
+				HandleException(exception);
+			}
         }
 
-        public void Dispose()
+	    private void HandleException(Exception exception)
+	    {
+		    failCount++;
+
+		    if (failCount > 3)
+		    {
+			    logger.Error("Failed to perform the clean action for three times or more.", exception);
+		    }
+		    else
+		    {
+			    logger.Warn("Failed to perform the clean action, verify that this doesn't happen regularly.", exception);
+		    }
+	    }
+
+	    public void Dispose()
         {
             if (timeoutTimer != null)
                 timeoutTimer.Dispose();
