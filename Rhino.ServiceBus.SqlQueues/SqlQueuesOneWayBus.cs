@@ -10,7 +10,7 @@ namespace Rhino.ServiceBus.SqlQueues
         private MessageOwnersSelector messageOwners;
         public static readonly Uri NullEndpoint = new Uri("null://nowhere:24689/middle");
         public SqlQueuesOneWayBus(MessageOwner[] messageOwners, IMessageSerializer messageSerializer, string connectionString, IMessageBuilder<MessagePayload> messageBuilder)
-            : base(NullEndpoint, new EndpointRouter(), messageSerializer, 1, connectionString, 5, messageBuilder)
+            : base(NullEndpoint, new EndpointRouter(), messageSerializer, 0, connectionString, 5, messageBuilder)
 
         {
             this.messageOwners = new MessageOwnersSelector(messageOwners, new EndpointRouter());

@@ -349,12 +349,19 @@ namespace Rhino.ServiceBus.SqlQueues
                 return;
             }
 
-            using (var tx = _sqlQueueManager.BeginTransaction())
-            {
-                _sqlQueueManager.ExtendMessageLease(message.Message);
-                message.Timer.Change(TimeSpan.FromMinutes(9.5), TimeSpan.FromMilliseconds(-1));
-                tx.Transaction.Commit();
-            }
+	        try
+			{
+				using (var tx = _sqlQueueManager.BeginTransaction())
+				{
+					_sqlQueueManager.ExtendMessageLease(message.Message);
+					message.Timer.Change(TimeSpan.FromMinutes(9.5), TimeSpan.FromMilliseconds(-1));
+					tx.Transaction.Commit();
+				}
+	        }
+	        catch (Exception ex)
+	        {
+				logger.Warn("Failed to extend the message lease", ex);
+	        }
         }
 
         private void ProcessMessage(
