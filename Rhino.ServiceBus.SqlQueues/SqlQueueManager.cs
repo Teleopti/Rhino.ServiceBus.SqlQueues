@@ -119,47 +119,71 @@ namespace Rhino.ServiceBus.SqlQueues
 
         public void Send(Uri uri, MessagePayload payload)
         {
-            SqlTransactionContext transactionToCommit = null;
-            if (SqlTransactionContext.Current == null)
-            {
-                transactionToCommit = BeginTransaction();
-            }
-            using (var command = SqlTransactionContext.Current.Connection.CreateCommand())
-            {
-                command.CommandText = "Queue.EnqueueMessage";
-                command.CommandType = CommandType.StoredProcedure;
-                command.Transaction = SqlTransactionContext.Current.Transaction;
-                command.Parameters.AddWithValue("@Endpoint", uri.ToString());
-                command.Parameters.AddWithValue("@Queue", uri.GetQueueName());
-                command.Parameters.AddWithValue("@SubQueue", DBNull.Value);
+	        using (new internalTransactionScope(this))
+	        {
+		        using (var command = SqlTransactionContext.Current.Connection.CreateCommand())
+		        {
+			        command.CommandText = "Queue.EnqueueMessage";
+			        command.CommandType = CommandType.StoredProcedure;
+			        command.Transaction = SqlTransactionContext.Current.Transaction;
+			        command.Parameters.AddWithValue("@Endpoint", uri.ToString());
+			        command.Parameters.AddWithValue("@Queue", uri.GetQueueName());
+			        command.Parameters.AddWithValue("@SubQueue", DBNull.Value);
 
-                var contents = new RawMessage
-                                   {
-                                       CreatedAt = payload.SentAt,
-                                       Payload = payload.Data,
-                                       ProcessingUntil = payload.SentAt
-                                   };
-                contents.SetHeaders(payload.Headers);
+			        var contents = new RawMessage
+				        {
+					        CreatedAt = payload.SentAt,
+					        Payload = payload.Data,
+					        ProcessingUntil = payload.SentAt
+				        };
+			        contents.SetHeaders(payload.Headers);
 
-                command.Parameters.AddWithValue("@CreatedAt", contents.CreatedAt);
-                command.Parameters.AddWithValue("@Payload", contents.Payload);
-                command.Parameters.AddWithValue("@ExpiresAt", DBNull.Value);
-                command.Parameters.AddWithValue("@ProcessingUntil", contents.CreatedAt);
-                command.Parameters.AddWithValue("@Headers", contents.Headers);
+			        command.Parameters.AddWithValue("@CreatedAt", contents.CreatedAt);
+			        command.Parameters.AddWithValue("@Payload", contents.Payload);
+			        command.Parameters.AddWithValue("@ExpiresAt", DBNull.Value);
+			        command.Parameters.AddWithValue("@ProcessingUntil", contents.CreatedAt);
+			        command.Parameters.AddWithValue("@Headers", contents.Headers);
 
-if (Logger.IsDebugEnabled)
-{
-	Logger.DebugFormat("Sending message to {0} on {1}. Headers are '{2}'.",uri,uri.GetQueueName(),contents.Headers);
-}
+			        if (Logger.IsDebugEnabled)
+			        {
+				        Logger.DebugFormat("Sending message to {0} on {1}. Headers are '{2}'.", uri, uri.GetQueueName(),
+				                           contents.Headers);
+			        }
 
-                command.ExecuteNonQuery();
-            }
-            if (transactionToCommit != null)
-            {
-                transactionToCommit.Transaction.Commit();
-                transactionToCommit.Dispose();
-            }
+			        command.ExecuteNonQuery();
+		        }
+	        }
         }
+
+		private class internalTransactionScope : IDisposable
+		{
+			private SqlTransactionContext transactionToCommit;
+
+			public internalTransactionScope(SqlQueueManager parent)
+			{
+				if (SqlTransactionContext.Current == null)
+				{
+					transactionToCommit = parent.BeginTransaction();
+				}
+			}
+
+			public void Dispose()
+			{
+				if (transactionToCommit != null)
+				{
+					try
+					{
+						transactionToCommit.Transaction.Commit();
+					}
+					catch (Exception ex)
+					{
+						Logger.Warn("Exception encountered when trying to commit transaction.",ex);
+					}
+					transactionToCommit.Dispose();
+					transactionToCommit = null;
+				}
+			}
+		}
 
         public SqlTransactionContext BeginTransaction()
         {

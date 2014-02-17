@@ -57,32 +57,28 @@ namespace Rhino.ServiceBus.SqlQueues
             return result;
         }
 
-        private void Transport_OnMessageSerializationException(CurrentMessageInformation information, Exception exception)
-        {
-            var info = (SqlQueueCurrentMessageInformation)information;
-            failureCounts.Write(writer => writer.Add(info.TransportMessageId, new ErrorCounter
-            {
-                ExceptionText = exception == null ? null : exception.ToString(),
-                FailureCount = numberOfRetries + 1
-            }));
+	    private void Transport_OnMessageSerializationException(CurrentMessageInformation information, Exception exception)
+	    {
+		    var info = (SqlQueueCurrentMessageInformation) information;
+		    failureCounts.Write(writer => writer.Add(info.TransportMessageId, new ErrorCounter
+			    {
+				    ExceptionText = exception == null ? null : exception.ToString(),
+				    FailureCount = numberOfRetries + 1
+			    }));
 
-            //using (var tx = new TransactionScope(TransactionScopeOption.RequiresNew))
-            //{
-                info.Queue.MoveTo(SubQueue.Errors.ToString(), info.TransportMessage);
-                info.Queue.EnqueueDirectlyTo(SubQueue.Errors.ToString(), new MessagePayload
-                {
-                    Data = exception == null ? null : Encoding.Unicode.GetBytes(exception.ToString()),
-                    Headers =
-						{
-							{"correlation-id", info.TransportMessageId},
-							{"retries", "1"}
-						}
-                });
-            //    tx.Complete();
-            //}
-        }
+		    info.Queue.MoveTo(SubQueue.Errors.ToString(), info.TransportMessage);
+		    info.Queue.EnqueueDirectlyTo(SubQueue.Errors.ToString(), new MessagePayload
+			    {
+				    Data = exception == null ? null : Encoding.Unicode.GetBytes(exception.ToString()),
+				    Headers =
+					    {
+						    {"correlation-id", info.TransportMessageId},
+						    {"retries", "1"}
+					    }
+			    });
+	    }
 
-        private void Transport_OnMessageProcessingCompleted(CurrentMessageInformation information, Exception ex)
+	    private void Transport_OnMessageProcessingCompleted(CurrentMessageInformation information, Exception ex)
         {
             if (ex != null)
                 return;
