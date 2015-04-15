@@ -352,6 +352,7 @@ BEGIN
     DECLARE @QueueId int;
 	DECLARE @DiscardedQueueId int;
 	DECLARE @TimeoutQueueId int;
+	DECLARE @ErrorQueueId int;
         
     EXEC Queue.GetAndAddQueue @Endpoint,@Queue,null,@QueueId=@QueueId OUTPUT;
 	
@@ -361,7 +362,7 @@ BEGIN
 	--Move discarded messages
 	SELECT @DiscardedQueueId = QueueId
 	FROM Queue.Queues
-	WHERE [Endpoint] = @Endpoint + N'\Discarded'
+	WHERE [Endpoint] = @Endpoint + N'/Discarded'
 	AND QueueName = @Queue
 
 	DELETE FROM Queue.Messages
@@ -371,18 +372,23 @@ BEGIN
 	ON m.QueueId = q.QueueId
 	AND q.QueueId = @DiscardedQueueId
 
-	--Move timeout messages
-	SELECT @TimeoutQueueId = QueueId
+	--Move error messages
+	SELECT @ErrorQueueId = QueueId
 	FROM Queue.Queues
-	WHERE ParentQueueId=@QueueId
-	AND QueueName=N'Timeout'
+	WHERE [Endpoint] = @Endpoint 
+	AND [ParentQueueId] = @QueueId
+	AND QueueName = N'Errors'
 
-	DELETE FROM Queue.Messages
-	OUTPUT deleted.* INTO [Queue].[MessagesPurged](MessageId, QueueId, CreatedAt, ProcessingUntil, ExpiresAt, Processed, Headers, Payload, ProcessedCount)
-	FROM Queue.Messages	m
-	INNER JOIN Queue.Queues q
-	ON m.QueueId = q.QueueId
-	AND q.QueueId = @TimeoutQueueId
+	IF @ErrorQueueId IS NOT NULL
+	BEGIN
+		DELETE FROM Queue.Messages
+		OUTPUT deleted.* INTO [Queue].[MessagesPurged](MessageId, QueueId, CreatedAt, ProcessingUntil, ExpiresAt, Processed, Headers, Payload, ProcessedCount)
+		FROM Queue.Messages	m
+		INNER JOIN Queue.Queues q
+		ON m.QueueId = q.QueueId
+		AND q.QueueId = @ErrorQueueId
+		AND CreatedAt < DATEADD(d,-3,GetUtcDate())
+	END
 
 END
 GO
