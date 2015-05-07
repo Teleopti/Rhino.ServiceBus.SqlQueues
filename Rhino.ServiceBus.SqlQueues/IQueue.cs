@@ -8,6 +8,6 @@ namespace Rhino.ServiceBus.SqlQueues
         void EnqueueDirectlyTo(string subQueue, MessagePayload messagePayload);
         string QueueName { get; }
         IEnumerable<Message> GetAllMessages(string queue);
-        Message PeekById(long messageId);
+        Message PeekByIdIgnoringProcessingUntil(long messageId);
     }
 }

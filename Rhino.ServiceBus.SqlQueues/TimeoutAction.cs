@@ -73,7 +73,7 @@ namespace Rhino.ServiceBus.SqlQueues
                             {
 	                            foreach (var id in messageIdCollection)
 	                            {
-									var message = queue.PeekById(id);
+									var message = queue.PeekByIdIgnoringProcessingUntil(id);
 									if (message == null)
 									{
 										logger.DebugFormat("Failed to move message {0} to main queue: {1}, not found.",

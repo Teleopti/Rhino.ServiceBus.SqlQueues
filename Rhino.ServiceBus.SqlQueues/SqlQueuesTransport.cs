@@ -121,15 +121,20 @@ namespace Rhino.ServiceBus.SqlQueues
             get { return queue; }
         }
 
+	    protected void internalStart()
+		{
+			shouldContinue = true;
+
+			_sqlQueueManager = new SqlQueueManager(queueEndpoint, connectionString);
+			_queueId = _sqlQueueManager.CreateQueue(queueName);
+	    }
+
         public void Start()
         {
             if (haveStarted)
                 return;
 
-            shouldContinue = true;
-
-            _sqlQueueManager = new SqlQueueManager(queueEndpoint, connectionString);
-            _queueId = _sqlQueueManager.CreateQueue(queueName);
+			internalStart();
 
             queue = _sqlQueueManager.GetQueue(queueName);
 
@@ -146,11 +151,17 @@ namespace Rhino.ServiceBus.SqlQueues
                 };
                 threads[i].Start(i);
             }
-            haveStarted = true;
-            var started = Started;
-            if (started != null)
-                started();
+
+			internalPostStart();
         }
+
+	    protected void internalPostStart()
+		{
+			haveStarted = true;
+			var started = Started;
+			if (started != null)
+				started();
+	    }
 
         private void ReceiveMessage(object context)
         {

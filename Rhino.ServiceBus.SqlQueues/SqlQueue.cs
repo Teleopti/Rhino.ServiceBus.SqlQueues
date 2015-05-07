@@ -128,7 +128,7 @@ namespace Rhino.ServiceBus.SqlQueues
             }
         }
 
-        public Message PeekById(long messageId)
+        public Message PeekByIdIgnoringProcessingUntil(long messageId)
         {
             RawMessage raw = null;
 

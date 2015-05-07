@@ -222,7 +222,6 @@ BEGIN
 	WHERE m.MessageId = @MessageId
 	AND isnull(m.ExpiresAt,DATEADD(mi,1,GetUtcDate())) > GetUtcDate()
 	AND m.Processed=0
-	AND m.ProcessingUntil<GetUtcDate()
 	ORDER BY m.CreatedAt ASC
 END
 GO

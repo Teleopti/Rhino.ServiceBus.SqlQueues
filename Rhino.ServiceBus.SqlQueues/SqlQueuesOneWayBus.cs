@@ -14,10 +14,11 @@ namespace Rhino.ServiceBus.SqlQueues
 
         {
             this.messageOwners = new MessageOwnersSelector(messageOwners, new EndpointRouter());
-            Start();
+			internalStart();
+			internalPostStart();
         }
 
-        public void Send(params object[] msgs)
+	    public void Send(params object[] msgs)
         {
             base.Send(messageOwners.GetEndpointForMessageBatch(msgs), msgs);
         }
