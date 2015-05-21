@@ -4,6 +4,6 @@ namespace Rhino.ServiceBus.SqlQueues
     {
         SqlTransactionContext BeginTransaction();
 
-        void Clean();
+        void Clean(int numberOfItemsToDelete);
     }
 }

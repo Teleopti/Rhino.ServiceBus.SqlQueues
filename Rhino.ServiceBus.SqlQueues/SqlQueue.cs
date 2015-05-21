@@ -110,7 +110,7 @@ namespace Rhino.ServiceBus.SqlQueues
             return rawList.Select(raw => raw.ToMessage());
         }
 
-        public void Clean()
+        public void Clean(int numberOfItemsToDelete)
         {
             using (var tx = BeginTransaction())
             {
@@ -119,6 +119,7 @@ namespace Rhino.ServiceBus.SqlQueues
                     command.CommandText = "Queue.Clean";
                     command.CommandType = CommandType.StoredProcedure;
                     command.Transaction = tx.Transaction;
+					command.Parameters.AddWithValue("@NumberOfItemsToClean", numberOfItemsToDelete);
                     command.Parameters.AddWithValue("@Endpoint", _endpoint.ToString());
                     command.Parameters.AddWithValue("@Queue", _queueName);
 

@@ -10,7 +10,8 @@ namespace Rhino.ServiceBus.SqlQueues
         private ISqlQueue queue;
         private Timer timeoutTimer;
 		private readonly ILog logger = LogManager.GetLogger(typeof(CleanAction));
-	    private int failCount;
+	    private int numberOfItemsToDelete = DefaultNumberOfItemsToDelete;
+	    private const int DefaultNumberOfItemsToDelete = 1000000;
 
         [CLSCompliant(false)]
         public CleanAction(ISqlQueue queue)
@@ -23,8 +24,8 @@ namespace Rhino.ServiceBus.SqlQueues
         {
 			try
 			{
-				queue.Clean();
-				failCount = 0;
+				queue.Clean(numberOfItemsToDelete);
+				numberOfItemsToDelete = DefaultNumberOfItemsToDelete;
 			}
 			catch (InvalidOperationException exception)
 			{
@@ -37,17 +38,10 @@ namespace Rhino.ServiceBus.SqlQueues
         }
 
 	    private void HandleException(Exception exception)
-	    {
-		    failCount++;
-
-		    if (failCount > 3)
-		    {
-			    logger.Error("Failed to perform the clean action for three times or more.", exception);
-		    }
-		    else
-		    {
-			    logger.Warn("Failed to perform the clean action, verify that this doesn't happen regularly.", exception);
-		    }
+		{
+			var newDeleteAttemptTarget = (int)Math.Sqrt(numberOfItemsToDelete);
+			logger.WarnFormat("Failed to perform the clean action with {0} limit. Trying with {1} instead.", exception, numberOfItemsToDelete, newDeleteAttemptTarget);
+		    numberOfItemsToDelete = newDeleteAttemptTarget;
 	    }
 
 	    public void Dispose()

@@ -342,6 +342,7 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Queue].[Cle
 DROP PROCEDURE [Queue].[Clean]
 GO
 CREATE PROCEDURE [Queue].[Clean]
+	@NumberOfItemsToClean int,
 	@Endpoint nvarchar(250),
 	@Queue nvarchar(50)
 AS
@@ -356,7 +357,7 @@ BEGIN
     EXEC Queue.GetAndAddQueue @Endpoint,@Queue,null,@QueueId=@QueueId OUTPUT;
 	
 	--Delete expired messages
-	DELETE FROM Queue.Messages WHERE QueueId=@QueueId AND ExpiresAt<GetUtcDate()
+	DELETE TOP (@NumberOfItemsToClean) FROM Queue.Messages WHERE QueueId=@QueueId AND ExpiresAt<GetUtcDate()
 
 	--Move discarded messages
 	SELECT @DiscardedQueueId = QueueId
@@ -364,7 +365,7 @@ BEGIN
 	WHERE [Endpoint] = @Endpoint + N'/Discarded'
 	AND QueueName = @Queue
 
-	DELETE FROM Queue.Messages
+	DELETE TOP (@NumberOfItemsToClean) FROM Queue.Messages
 	OUTPUT deleted.* INTO [Queue].[MessagesPurged](MessageId, QueueId, CreatedAt, ProcessingUntil, ExpiresAt, Processed, Headers, Payload, ProcessedCount)
 	FROM Queue.Messages	m
 	INNER JOIN Queue.Queues q
@@ -380,7 +381,7 @@ BEGIN
 
 	IF @ErrorQueueId IS NOT NULL
 	BEGIN
-		DELETE FROM Queue.Messages
+		DELETE TOP (@NumberOfItemsToClean) FROM Queue.Messages
 		OUTPUT deleted.* INTO [Queue].[MessagesPurged](MessageId, QueueId, CreatedAt, ProcessingUntil, ExpiresAt, Processed, Headers, Payload, ProcessedCount)
 		FROM Queue.Messages	m
 		INNER JOIN Queue.Queues q
