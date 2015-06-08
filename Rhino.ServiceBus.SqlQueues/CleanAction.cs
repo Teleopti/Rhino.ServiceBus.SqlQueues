@@ -24,6 +24,7 @@ namespace Rhino.ServiceBus.SqlQueues
         {
 			try
 			{
+				logger.DebugFormat("Performing the clean action with {0} limit.", numberOfItemsToDelete);
 				queue.Clean(numberOfItemsToDelete);
 				numberOfItemsToDelete = DefaultNumberOfItemsToDelete;
 			}

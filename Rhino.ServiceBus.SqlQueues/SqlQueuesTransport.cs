@@ -138,8 +138,8 @@ namespace Rhino.ServiceBus.SqlQueues
 
             queue = _sqlQueueManager.GetQueue(queueName);
 
+			cleanUp = new CleanAction(queue);
             timeout = new TimeoutAction(queue);
-            cleanUp = new CleanAction(queue);
             logger.DebugFormat("Starting {0} threads to handle messages on {1}, number of retries: {2}",
                 threadCount, queueEndpoint, numberOfRetries);
             for (var i = 0; i < threadCount; i++)
