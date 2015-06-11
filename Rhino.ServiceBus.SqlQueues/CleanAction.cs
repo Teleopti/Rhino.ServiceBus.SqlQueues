@@ -17,7 +17,7 @@ namespace Rhino.ServiceBus.SqlQueues
         public CleanAction(ISqlQueue queue)
         {
             this.queue = queue;
-            timeoutTimer = new Timer(OnTimeoutCallback, null, TimeSpan.FromSeconds(0), TimeSpan.FromHours(1));
+            timeoutTimer = new Timer(OnTimeoutCallback, null, TimeSpan.FromHours(0), TimeSpan.FromHours(1));
         }
 
         private void OnTimeoutCallback(object state)

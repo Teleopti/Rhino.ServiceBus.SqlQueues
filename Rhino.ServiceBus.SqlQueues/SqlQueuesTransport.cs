@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Globalization;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using Common.Logging;
 using Rhino.ServiceBus.Impl;
@@ -138,21 +139,22 @@ namespace Rhino.ServiceBus.SqlQueues
 
             queue = _sqlQueueManager.GetQueue(queueName);
 
-			cleanUp = new CleanAction(queue);
-            timeout = new TimeoutAction(queue);
-            logger.DebugFormat("Starting {0} threads to handle messages on {1}, number of retries: {2}",
-                threadCount, queueEndpoint, numberOfRetries);
-            for (var i = 0; i < threadCount; i++)
-            {
-                threads[i] = new Thread(ReceiveMessage)
-                {
-                    Name = "Rhino Service Bus Worker Thread #" + i,
-                    IsBackground = true
-                };
-                threads[i].Start(i);
-            }
-
-			internalPostStart();
+	        Task.Factory.StartNew(() =>
+	        {
+		        cleanUp = new CleanAction(queue);
+		        timeout = new TimeoutAction(queue);
+		        logger.DebugFormat("Starting {0} threads to handle messages on {1}, number of retries: {2}",
+			        threadCount, queueEndpoint, numberOfRetries);
+		        for (var i = 0; i < threadCount; i++)
+		        {
+			        threads[i] = new Thread(ReceiveMessage)
+			        {
+				        Name = "Rhino Service Bus Worker Thread #" + i,
+				        IsBackground = true
+			        };
+			        threads[i].Start(i);
+		        }
+	        }).ContinueWith(_ => internalPostStart(), TaskContinuationOptions.OnlyOnRanToCompletion);
         }
 
 	    protected void internalPostStart()

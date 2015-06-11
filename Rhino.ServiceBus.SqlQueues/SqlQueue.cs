@@ -68,7 +68,8 @@ namespace Rhino.ServiceBus.SqlQueues
             using (var tx = BeginTransaction())
             {
                 using (var command = tx.Connection.CreateCommand())
-                {
+				{
+					command.CommandTimeout = 240;
                     command.CommandText = "Queue.RecieveMessages";
                     command.CommandType = CommandType.StoredProcedure;
                     command.Transaction = tx.Transaction;
@@ -116,6 +117,7 @@ namespace Rhino.ServiceBus.SqlQueues
             {
                 using (var command = tx.Connection.CreateCommand())
                 {
+	                command.CommandTimeout = 240;
                     command.CommandText = "Queue.Clean";
                     command.CommandType = CommandType.StoredProcedure;
                     command.Transaction = tx.Transaction;

@@ -122,7 +122,8 @@ namespace Rhino.ServiceBus.SqlQueues
 	        using (new internalTransactionScope(this))
 	        {
 		        using (var command = SqlTransactionContext.Current.Connection.CreateCommand())
-		        {
+				{
+					command.CommandTimeout = 60;
 			        command.CommandText = "Queue.EnqueueMessage";
 			        command.CommandType = CommandType.StoredProcedure;
 			        command.Transaction = SqlTransactionContext.Current.Transaction;
