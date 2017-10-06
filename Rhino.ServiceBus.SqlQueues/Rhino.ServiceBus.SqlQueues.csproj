@@ -90,6 +90,7 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
+    <None Include="Rhino.ServiceBus.SqlQueues.nuspec" />
     <None Include="Rhino.ServiceBus.SqlQueues.snk" />
   </ItemGroup>
   <ItemGroup />
